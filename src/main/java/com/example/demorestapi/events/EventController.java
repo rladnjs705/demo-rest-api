@@ -1,5 +1,6 @@
 package com.example.demorestapi.events;
 
+import com.example.demorestapi.common.ErrorsResource;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.hateoas.Link;
@@ -35,14 +36,15 @@ public class EventController {
         // TODO 일반적인 Bad_Request 처리
         // TODO build() -> 에러 메시지 body(errors)에 담기
         if(errors.hasErrors()){
-            return ResponseEntity.badRequest().body(errors);
+            //return ResponseEntity.badRequest().body(errors);
+            return badRequest(errors);
         }
 
         // TODO 특정한 값 Bad_Request 처리
         // TODO build() -> 에러 메시지 body(errors)에 담기
         eventValidator.validate(eventDto, errors);
         if(errors.hasErrors()){
-            return ResponseEntity.badRequest().body(errors);
+            return badRequest(errors);
         }
 
         // TODO Model Mapper 사용 후 입력값 제한하기
@@ -70,5 +72,9 @@ public class EventController {
 //        eventResource.add(selfLinkBuilder.withSelfRel());
         eventResource.add(Link.of("/docs/api.html#resources-events-create").withRel("profile"));
         return ResponseEntity.created(createdUri).body(eventResource);
+    }
+
+    private ResponseEntity badRequest(Errors errors) {
+        return ResponseEntity.badRequest().body(ErrorsResource.modelOf(errors));
     }
 }

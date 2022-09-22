@@ -190,11 +190,18 @@ class EventControllerTest {
                         .content(this.objectMapper.writeValueAsString(eventDto)))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$[0].objectName").exists())
-                .andExpect(jsonPath("$[0].defaultMessage").exists())
-                .andExpect(jsonPath("$[0].code").exists())
+                //Arrays는 json unwrap 할수 없어서 오류남
+//                .andExpect(jsonPath("$[0].objectName").exists())
+//                .andExpect(jsonPath("$[0].defaultMessage").exists())
+//                .andExpect(jsonPath("$[0].code").exists())
                 //.andExpect(jsonPath("$[0].field").exists())
                 //.andExpect(jsonPath("$[0].rejectedValue").exists())
+                //errors를 명시적으로 변경
+                .andExpect(jsonPath("errors[0].objectName").exists())
+                .andExpect(jsonPath("errors[0].defaultMessage").exists())
+                .andExpect(jsonPath("errors[0].code").exists())
+                //에러 발생시 index 페이지로 가길 원할때
+                .andExpect(jsonPath("_links.index").exists())
         ;
     }
 }
