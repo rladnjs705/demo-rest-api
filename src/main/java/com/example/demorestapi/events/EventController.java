@@ -2,6 +2,7 @@ package com.example.demorestapi.events;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Links;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
@@ -67,6 +68,7 @@ public class EventController {
         eventResource.add(selfLinkBuilder.withRel("update-event"));
         // TODO _links.self(EventResource로 옮김)
 //        eventResource.add(selfLinkBuilder.withSelfRel());
+        eventResource.add(Link.of("/docs/api.html#resources-events-create").withRel("profile"));
         return ResponseEntity.created(createdUri).body(eventResource);
     }
 }

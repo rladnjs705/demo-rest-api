@@ -1,8 +1,17 @@
+buildscript {
+	ext {
+		queryDslVersion = "5.0.0"
+	}
+}
+
 plugins {
 	id 'org.springframework.boot' version '2.7.3'
 	id 'io.spring.dependency-management' version '1.0.13.RELEASE'
-	id 'org.asciidoctor.convert' version '1.5.8'
+	id "org.asciidoctor.jvm.convert" version "3.3.2"
 	id 'java'
+
+	//querydsl 추가
+	id "com.ewerk.gradle.plugins.querydsl" version "1.0.10"
 }
 
 group = 'com.example'
@@ -15,12 +24,20 @@ configurations {
 	}
 }
 
-repositories {
-	mavenCentral()
+ext {
+	snippetsDir = file('build/generated-snippets')
 }
 
-ext {
-	set('snippetsDir', file("build/generated-snippets"))
+bootJar {
+	dependsOn asciidoctor
+	copy {
+		from "${asciidoctor.outputDir}"
+		into 'BOOT-INF/classes/static/docs'
+	}
+}
+
+repositories {
+	mavenCentral()
 }
 
 dependencies {
@@ -30,20 +47,55 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.modelmapper:modelmapper:3.1.0'
 	compileOnly 'org.projectlombok:lombok'
-	compileOnly 'org.postgresql:postgresql'
+	runtimeOnly 'mysql:mysql-connector-java'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'com.h2database:h2'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
 	testImplementation 'pl.pragmatists:JUnitParams:1.1.1'
+
+	//querydsl 추가
+	implementation "com.querydsl:querydsl-jpa"
+	annotationProcessor "com.querydsl:querydsl-apt"
 }
 
-tasks.named('test') {
-	outputs.dir snippetsDir
+test {
 	useJUnitPlatform()
+	outputs.dir snippetsDir
 }
 
-tasks.named('asciidoctor') {
-	inputs.dir snippetsDir
+asciidoctor {
 	dependsOn test
+	inputs.dir snippetsDir
 }
+
+asciidoctor.doFirst {
+	delete file('src/main/resources/static/docs')
+}
+
+task copyDocument(type: Copy) {
+	dependsOn asciidoctor
+	from file("build/docs/asciidoc")
+	into file("src/main/resources/static/docs")
+}
+
+build {
+	dependsOn copyDocument
+}
+
+//querydsl 추가 시작
+def querydslDir = "$buildDir/generated/querydsl"
+querydsl {
+	jpa = true
+	querydslSourcesDir = querydslDir
+}
+sourceSets {
+	main.java.srcDir querydslDir
+}
+configurations {
+	querydsl.extendsFrom compileClasspath
+}
+compileQuerydsl {
+	options.annotationProcessorPath = configurations.querydsl
+}
+//querydsl 추가 끝
