@@ -61,8 +61,8 @@ public class EventController {
 
         // TODO HATEOAS 적용-2
         //링크 추가
-        EventResource eventResource = new EventResource(event);
-        //EventResource2 eventResource = new EventResource2(event, Links.of());
+        //EventResource eventResource = new EventResource(event);
+        EventResource2 eventResource = new EventResource2(event, Links.of());
         eventResource.add(linkTo(EventController.class).withRel("query-events"));
         eventResource.add(selfLinkBuilder.withRel("update-event"));
         // TODO _links.self(EventResource로 옮김)
