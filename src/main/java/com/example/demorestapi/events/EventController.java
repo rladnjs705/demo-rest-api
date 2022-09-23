@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
+import javax.swing.text.html.Option;
 import javax.validation.Valid;
 import java.net.URI;
 import java.util.Optional;
@@ -93,6 +94,34 @@ public class EventController {
         EntityModel<Event> eventResource = EventResource.modelOf(event);
         eventResource.add(Link.of("/docs/api.html#resources-events-get").withRel("profile"));
         return ResponseEntity.ok(eventResource);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity putEvent(@PathVariable Integer id, @RequestBody @Valid EventDto eventDto, Errors errors){
+        Optional<Event> optionalEvent = this.eventRepository.findById(id);
+        if( optionalEvent.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+
+        if(errors.hasErrors()){
+            return badRequest(errors);
+        }
+
+        eventValidator.validate(eventDto, errors);
+        if(errors.hasErrors()){
+            return badRequest(errors);
+        }
+
+        Event event = optionalEvent.get();
+        this.modelMapper.map(eventDto, event);
+        Event savedEvent = this.eventRepository.save(event);
+
+        EntityModel<Event> eventResource = EventResource.modelOf(savedEvent);
+        eventResource.add(Link.of("/docs/api.html#resources-events-update").withRel("profile"));
+
+        return ResponseEntity.ok(eventResource);
+
+
     }
 
     private ResponseEntity badRequest(Errors errors) {
