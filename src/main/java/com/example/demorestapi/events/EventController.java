@@ -3,13 +3,15 @@ package com.example.demorestapi.events;
 import com.example.demorestapi.common.ErrorsResource;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Links;
-import org.springframework.hateoas.MediaTypes;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.*;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,14 +66,22 @@ public class EventController {
 
         // TODO HATEOAS 적용-2
         //링크 추가
-        //EventResource eventResource = new EventResource(event);
-        EventResource2 eventResource = new EventResource2(event, Links.of());
+        EntityModel<Event> eventResource = EventResource.modelOf(event);
         eventResource.add(linkTo(EventController.class).withRel("query-events"));
         eventResource.add(selfLinkBuilder.withRel("update-event"));
         // TODO _links.self(EventResource로 옮김)
 //        eventResource.add(selfLinkBuilder.withSelfRel());
         eventResource.add(Link.of("/docs/api.html#resources-events-create").withRel("profile"));
         return ResponseEntity.created(createdUri).body(eventResource);
+    }
+
+    @GetMapping
+    public ResponseEntity queryEvent(Pageable pageable, PagedResourcesAssembler<Event> assembler){
+        Page<Event> page = this.eventRepository.findAll(pageable);
+        PagedModel<EntityModel<Event>> pagedResources = assembler.toModel(page, e-> EventResource.modelOf(e));
+        //var pagedResources = assembler.toModel(page, e -> new EventResource(e));
+        pagedResources.add(Link.of("/docs/api.html#resources-events-list").withRel("profile"));
+        return ResponseEntity.ok(pagedResources);
     }
 
     private ResponseEntity badRequest(Errors errors) {

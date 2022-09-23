@@ -16,13 +16,18 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.springframework.restdocs.headers.HeaderDocumentation.*;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -38,6 +43,9 @@ class EventControllerTest {
 
     @Autowired
     ObjectMapper objectMapper;
+
+    @Autowired
+    EventRepository eventRepository;
 
     @Test
     @DisplayName("정상적으로 이벤트를 생성하는 테스트")
@@ -203,5 +211,82 @@ class EventControllerTest {
                 //에러 발생시 index 페이지로 가길 원할때
                 .andExpect(jsonPath("_links.index").exists())
         ;
+    }
+
+    @Test
+    @DisplayName("30개의 이벤트를 10개씩 두번째 페이지 조회하기")
+    void queryEvents() throws Exception {
+        //Given
+        IntStream.range(0,30).forEach(this::generateEvent);
+
+        //When
+        this.mockMvc.perform(get("/api/events")
+                        .param("page", "1")
+                        .param("size", "10")
+                        .param("sort", "name,DESC"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("page").exists())
+                .andExpect(jsonPath("_embedded.eventList[0]._links.self").exists())
+                .andExpect(jsonPath("_links.self").exists())
+                .andExpect(jsonPath("_links.profile").exists())
+                .andDo(document("query-events",
+                        links(
+                                linkWithRel("first").description("첫 페이지"),
+                                linkWithRel("prev").description("이전 페이지"),
+                                linkWithRel("next").description("다음 페이지"),
+                                linkWithRel("last").description("끝 페이지"),
+                                linkWithRel("self").description("link to self"),
+                                linkWithRel("profile").description("link to profile")
+                        ),
+                        requestParameters(
+                                List.of(
+                                        parameterWithName("page").description("페이지 번호"),
+                                        parameterWithName("size").description("페이지 사이즈"),
+                                        parameterWithName("sort").description("정렬")
+                                )
+                        ),
+                        responseHeaders(
+                                headerWithName(HttpHeaders.CONTENT_TYPE).description("content type header")
+                        ),
+                        responseFields(
+                                fieldWithPath("_embedded.eventList[0]").description("event list"),
+                                fieldWithPath("_embedded.eventList[0].id").description("identifier of new event"),
+                                fieldWithPath("_embedded.eventList[0].name").description("Name of new event"),
+                                fieldWithPath("_embedded.eventList[0].description").description("description of new event"),
+                                fieldWithPath("_embedded.eventList[0].beginEnrollmentDateTime").description("date time of begin of new event"),
+                                fieldWithPath("_embedded.eventList[0].closeEnrollmentDateTime").description("date time of close of new event"),
+                                fieldWithPath("_embedded.eventList[0].beginEventDateTime").description("date time of begin of new event"),
+                                fieldWithPath("_embedded.eventList[0].endEventDateTime").description("date time of end of new event"),
+                                fieldWithPath("_embedded.eventList[0].location").description("location of new event"),
+                                fieldWithPath("_embedded.eventList[0].basePrice").description("base price of new event"),
+                                fieldWithPath("_embedded.eventList[0].maxPrice").description("max price of new event"),
+                                fieldWithPath("_embedded.eventList[0].limitOfEnrollment").description("limit of of enrollment"),
+                                fieldWithPath("_embedded.eventList[0].offline").description("it tells if this event is offline event or not"),
+                                fieldWithPath("_embedded.eventList[0].free").description("it tells if this event is free or not"),
+                                fieldWithPath("_embedded.eventList[0].eventStatus").description("event status"),
+                                fieldWithPath("_embedded.eventList[0]._links.self.href").description("link to self"),
+                                fieldWithPath("page.size").description("page size"),
+                                fieldWithPath("page.totalElements").description("total count"),
+                                fieldWithPath("page.totalPages").description("total page"),
+                                fieldWithPath("page.number").description("page number"),
+                                fieldWithPath("_links.first.href").description("첫 페이지"),
+                                fieldWithPath("_links.prev.href").description("이전 페이지"),
+                                fieldWithPath("_links.next.href").description("다음 페이지"),
+                                fieldWithPath("_links.last.href").description("끝 페이지"),
+                                fieldWithPath("_links.self.href").description("link to self"),
+                                fieldWithPath("_links.profile.href").description("link to profile")
+                        )
+                ))
+        ;
+
+    }
+
+    private void generateEvent(int index) {
+        Event event = Event.builder()
+                .name("event" + index)
+                .description("test event")
+                .build();
+        this.eventRepository.save(event);
     }
 }
