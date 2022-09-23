@@ -1,20 +1,12 @@
 package com.example.demorestapi.events;
 
-import com.example.demorestapi.common.RestDocsConfiguration;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.demorestapi.common.BaseControllerTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,25 +23,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@AutoConfigureRestDocs //RestDocs사용
-@Import(RestDocsConfiguration.class) //RestDocs 요청,응답 이쁘게 변환
-@ActiveProfiles("test")
-class EventControllerTest {
-
-    @Autowired
-    MockMvc mockMvc; //웹서버를 띄우지 않고, DispatcheServlet 요청 처리를 확인 할 수 있다
-
-    @Autowired
-    ObjectMapper objectMapper;
+public class EventControllerTest extends BaseControllerTest {
 
     @Autowired
     EventRepository eventRepository;
-
-    @Autowired
-    ModelMapper modelMapper;
-
     @Test
     @DisplayName("정상적으로 이벤트를 생성하는 테스트")
     void createEvent() throws Exception {
